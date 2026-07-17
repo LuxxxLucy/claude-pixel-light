@@ -7,7 +7,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 bin="$here/build/claude-light"
 log=/tmp/claude-light.log
 
-[ -x "$bin" ] || make -C "$here" >/dev/null
+[ -x "$bin" ] || make -C "$here" ${PIXEL_LIGHTS:+PIXEL_LIGHTS="$PIXEL_LIGHTS"} >/dev/null
 
 sudo -v                                          # ask for the password once, cache it
 sudo pkill -f 'claude-light daemon' 2>/dev/null || true
