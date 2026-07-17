@@ -1,0 +1,58 @@
+# Build the blog (doc/main.typ -> doc/index.html) and deploy it to GitHub Pages
+# on every push to main. Fonts are vendored under doc/vendor/dual-typst; cetz is
+# pulled from the Typst package registry at build time.
+
+name: pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: latest
+
+      - name: Vendor the dual-typst library
+        run: |
+          mkdir -p doc/vendor
+          git clone --depth 1 https://github.com/LuxxxLucy/dual-tufte-typst.git doc/vendor/dual-typst
+
+      - name: Build HTML
+        working-directory: doc
+        run: ./build.sh
+
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp doc/index.html _site/index.html
+          cp -R doc/assets _site/assets
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
